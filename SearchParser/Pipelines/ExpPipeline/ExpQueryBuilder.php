@@ -4,8 +4,8 @@ namespace SearchParser\Pipelines\ExpPipeline;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Resolvers\AbstractResolver;
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Pipelines\ExpPipeline\Resolvers\AbstractResolver;
+use SearchParser\Exceptions;
 
 class ExpQueryBuilder
 {
@@ -85,7 +85,7 @@ class ExpQueryBuilder
         $reflector = new \ReflectionClass($resolver);
 
         if (!$reflector->isInstantiable()) {
-            throw new Exceptions\SearchParserInvalidResolverException(
+            throw new Exceptions\InvalidResolverException(
                 sprintf("Could not create %s resolver instance.", $resolver)
             );
         }
@@ -93,7 +93,7 @@ class ExpQueryBuilder
         $constructor = $reflector->getConstructor();
 
         if (is_null($constructor)) {
-            throw new Exceptions\SearchParserInvalidResolverException(
+            throw new Exceptions\InvalidResolverException(
                 sprintf("Could not create %s resolver instance.", $resolver)
             );
         }

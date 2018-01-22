@@ -3,9 +3,9 @@
 namespace SearchParser\Pipelines\ExpPipeline\Middlewares;
 
 use Illuminate\Database\Eloquent\Builder;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
+use SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
 use Closure;
-use Inno\Lib\SearchParser\Exceptions\SearchParserInvalidCaseException;
+use SearchParser\Exceptions\InvalidCaseException;
 
 class CheckIsFieldExistedMiddleware extends AbstractMiddleware
 {
@@ -20,7 +20,7 @@ class CheckIsFieldExistedMiddleware extends AbstractMiddleware
         $columns = $schema->getColumnListing($table);
 
         if (!in_array($case->field, $columns)) {
-            throw new SearchParserInvalidCaseException(sprintf(
+            throw new InvalidCaseException(sprintf(
                 "Field `%s` does not exists in table `%s`.",
                 $case->field,
                 $table

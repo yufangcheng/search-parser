@@ -2,7 +2,7 @@
 
 namespace SearchParser\Pipelines;
 
-use Inno\Lib\SearchParser\SearchParser;
+use SearchParser\SearchParser;
 use Avris\Bag\Bag;
 use Closure;
 
@@ -22,7 +22,10 @@ class PaginationPipeline extends AbstractPipeline
     {
         $request = $parser->getRequest();
         $start = $request->get(getConfig('start'), 0);
-        $rows = $request->get(getConfig('rows'), 20);
+        $rows = $request->get(
+            getConfig('rows'),
+            getConfig('pageSize', 20)
+        );
 
         return [$start, $rows];
     }

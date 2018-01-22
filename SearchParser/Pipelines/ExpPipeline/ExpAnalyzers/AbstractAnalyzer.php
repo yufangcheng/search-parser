@@ -2,13 +2,14 @@
 
 namespace SearchParser\Pipelines\ExpPipeline\ExpAnalyzers;
 
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Expression;
-use Avris\Bag\Set;
+use Avris\Bag\Bag;
 use Closure;
+use SearchParser\Pipelines\ExpPipeline\Expression;
 
 abstract class AbstractAnalyzer
 {
     const RULE_KEY_WITH_RELATION = '/^((?:AND|OR)\s+)?\s*[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?\s*$/i';
+    const RULE_FUNCTION_NAME = '/^[a-z]\w*$/i';
 
     const OPT_EQUAL = ':';
     const OPT_IN = ':|';
@@ -32,12 +33,14 @@ abstract class AbstractAnalyzer
     const STATE_CHECK_VALUE_TYPE = 5;
     const STATE_NUMERIC_VALUE_START = 6;
     const STATE_QUOTED_VALUE_START = 7;
-    const STATE_NOT_OPERATOR_START = 8;
-    const STATE_CHECK_IS_MULTIPLE_VALUE = 9;
-    const STATE_CHECK_RELATION_TYPE = 10;
-    const STATE_AND_RELATION_START = 11;
-    const STATE_OR_RELATION_START = 12;
-    const STATE_EXP_END = 13;
+    const STATE_FUNC_VALUE_START = 8;
+    const STATE_NOT_OPERATOR_START = 9;
+    const STATE_CHECK_IS_MULTIPLE_FUNC = 10;
+    const STATE_CHECK_IS_MULTIPLE_VALUE = 11;
+    const STATE_CHECK_RELATION_TYPE = 12;
+    const STATE_AND_RELATION_START = 13;
+    const STATE_OR_RELATION_START = 14;
+    const STATE_EXP_END = 15;
 
     protected function getConfigs($prefix)
     {
@@ -53,5 +56,5 @@ abstract class AbstractAnalyzer
         return $configs;
     }
 
-    abstract public function analyze(Expression $exp, Set $ast, Closure $next);
+    abstract public function analyze(Expression $exp, Bag $ast, Closure $next);
 }

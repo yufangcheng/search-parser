@@ -2,13 +2,13 @@
 
 namespace SearchParser\Pipelines\ExpPipeline\Cases;
 
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
+use SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Closure;
 use Illuminate\Http\Request;
-use Inno\Lib\SearchParser\SearchParser;
+use SearchParser\SearchParser;
 use Avris\Bag\Bag;
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Exceptions;
 
 class ScopeCase implements CaseInterface
 {
@@ -42,7 +42,7 @@ class ScopeCase implements CaseInterface
 
     public function getSupportedValueTypes()
     {
-        throw new Exceptions\SearchParserInvalidValueTypeException(
+        throw new Exceptions\InvalidValueTypeException(
             "Scope case doesn't support any value types."
         );
     }

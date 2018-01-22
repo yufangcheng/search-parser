@@ -13,7 +13,7 @@ class SearchParserServiceProvider extends ServiceProvider
 
     public function register()
     {
-        //
+
     }
 
     protected function setPublishes()

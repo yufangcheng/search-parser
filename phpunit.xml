@@ -13,6 +13,7 @@
 >
     <testsuite name="SearchQueryParser Test Suite">
         <directory suffix="Test.php">Tests/SearchParser</directory>
+        <exclude>Tests/SearchParser/Analyzers/AnalyzeExceptionsTest.php</exclude>
     </testsuite>
     <filter>
         <whitelist addUncoveredFilesFromWhitelist="true">

@@ -2,14 +2,14 @@
 
 namespace SearchParser\Pipelines;
 
-use Inno\Lib\SearchParser\SearchParser;
+use SearchParser\SearchParser;
 use Avris\Bag\Bag;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Exceptions;
 
 class FilterPipeline extends AbstractPipeline
 {
@@ -91,7 +91,7 @@ class FilterPipeline extends AbstractPipeline
                 }
             }
         } catch (\Exception $e) {
-            throw new Exceptions\SearchParserForeignKeyNotFoundException(sprintf(
+            throw new Exceptions\ForeignKeyNotFoundException(sprintf(
                 "Failed to find the foreign key of relation %s.",
                 $relation
             ));

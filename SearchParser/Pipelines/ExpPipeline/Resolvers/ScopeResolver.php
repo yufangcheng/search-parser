@@ -2,7 +2,7 @@
 
 namespace SearchParser\Pipelines\ExpPipeline\Resolvers;
 
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\ScopeCase;
+use SearchParser\Pipelines\ExpPipeline\Cases\ScopeCase;
 
 class ScopeResolver extends AbstractResolver
 {

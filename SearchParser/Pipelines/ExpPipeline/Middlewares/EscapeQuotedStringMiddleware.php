@@ -3,10 +3,10 @@
 namespace SearchParser\Pipelines\ExpPipeline\Middlewares;
 
 use Illuminate\Database\Eloquent\Builder;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\AbstractCase;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
+use SearchParser\Pipelines\ExpPipeline\Cases\AbstractCase;
+use SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
 use Closure;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Expression;
+use SearchParser\Pipelines\ExpPipeline\Expression;
 
 class EscapeQuotedStringMiddleware extends AbstractMiddleware
 {

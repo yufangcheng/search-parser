@@ -2,14 +2,18 @@
 
 namespace SearchParser\Pipelines\ExpPipeline\ExpAnalyzers;
 
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Expression;
-use Avris\Bag\Set;
+use Avris\Bag\Bag;
 use Closure;
-use Inno\Lib\SearchParser\Exceptions\Analyze;
+use SearchParser\Exceptions\Analyze;
+use SearchParser\Pipelines\ExpPipeline\Expression;
 
 class ExpAnalyzer extends AbstractAnalyzer
 {
+    const FUNC_START_MARK = '(';
+    const FUNC_END_MARK = ')';
+
     protected $charStack = [];
+    protected $functionMarks = [];
     protected $collectEnabled = false;
     protected $operators = [
         self::OPT_EQUAL,
@@ -19,7 +23,7 @@ class ExpAnalyzer extends AbstractAnalyzer
         self::OPT_GREAT_EQUAL,
         self::OPT_LOWER,
         self::OPT_LOWER_EQUAL,
-        self::OPT_LIKE
+        self::OPT_LIKE,
     ];
     protected $relations = [
         self::RELATION_AND,
@@ -27,7 +31,7 @@ class ExpAnalyzer extends AbstractAnalyzer
         self::RELATION_TO,
     ];
 
-    public function analyze(Expression $exp, Set $ast, Closure $next)
+    public function analyze(Expression $exp, Bag $ast, Closure $next)
     {
         if ($exp->length() === 0) {
             return $next($exp, $ast);
@@ -55,13 +59,13 @@ class ExpAnalyzer extends AbstractAnalyzer
         // 如果遍历完整个字符串状态不是预期的结束状态则抛错
 
         if ($state !== self::STATE_EXP_END) {
-            throw new Analyze\SearchParserAnalyzeInvalidExpressionException(sprintf(
+            throw new Analyze\AnalyzeInvalidExpressionException(sprintf(
                 'Invalid expression %s.',
                 $exp->getString()
             ));
         }
 
-        return $next($exp, $ast);
+        return $next(new Expression($exp), $ast);
     }
 
     protected function getStateProcessName($stateValue)
@@ -69,7 +73,7 @@ class ExpAnalyzer extends AbstractAnalyzer
         $states = $this->getAllStates();
 
         if (!isset($states[$stateValue])) {
-            throw new Analyze\SearchParserAnalyzeMissingStateException(sprintf(
+            throw new Analyze\AnalyzeMissingStateException(sprintf(
                 "Missing state which state value is %s.",
                 $stateValue
             ));
@@ -99,7 +103,7 @@ class ExpAnalyzer extends AbstractAnalyzer
     protected function invokeProcess($process, Expression $exp)
     {
         if (!method_exists($this, $process)) {
-            throw new Analyze\SearchParserAnalyzeMissingProcessException(sprintf(
+            throw new Analyze\AnalyzeMissingProcessException(sprintf(
                 "Process %s is missing in analyzer %s.",
                 $process,
                 __CLASS__
@@ -116,13 +120,25 @@ class ExpAnalyzer extends AbstractAnalyzer
         }
     }
 
-    protected function collectCharFromRecords(Set $collection)
+    protected function collectCharFromRecords(Bag $collection)
     {
         if (is_array($this->charStack) && !checkIsBlank($atomicExp = implode('', $this->charStack))) {
-            $collection->add(trim($atomicExp));
+            $collection->set(
+                trim($atomicExp),
+                $this->collectFunctionMarks()
+            );
         }
 
         $this->charStack = [];
+    }
+
+    protected function collectFunctionMarks()
+    {
+        $marks = $this->functionMarks;
+        ksort($marks);
+        $this->functionMarks = [];
+
+        return $marks;
     }
 
     /**
@@ -139,7 +155,7 @@ class ExpAnalyzer extends AbstractAnalyzer
              * 只有遇到合法的 key 之后遇到才是正常的
              */
             case in_array($nextChar, $this->operators):
-                throw new Analyze\SearchParserAnalyzeInvalidKeyException(
+                throw new Analyze\AnalyzeInvalidKeyException(
                     "Invalid empty key name."
                 );
             /**
@@ -203,7 +219,7 @@ class ExpAnalyzer extends AbstractAnalyzer
                  * 以上条件都不满足则抛出异常
                  */
                 default:
-                    throw new Analyze\SearchParserAnalyzeInvalidValueException(
+                    throw new Analyze\AnalyzeInvalidValueException(
                         "Invalid scope value."
                     );
             }
@@ -235,7 +251,7 @@ class ExpAnalyzer extends AbstractAnalyzer
                 $keyStack = [];
 
                 if (!preg_match(self::RULE_KEY_WITH_RELATION, $key)) {
-                    throw new Analyze\SearchParserAnalyzeInvalidKeyException(sprintf(
+                    throw new Analyze\AnalyzeInvalidKeyException(sprintf(
                         "Invalid key name %s.",
                         $key
                     ));
@@ -270,7 +286,7 @@ class ExpAnalyzer extends AbstractAnalyzer
         $operatorStack = [];
 
         if (empty($availableOperators)) {
-            throw new Analyze\SearchParserAnalyzeInvalidOperatorException(sprintf(
+            throw new Analyze\AnalyzeInvalidOperatorException(sprintf(
                 'Invalid operator start with %s.',
                 $unfinishedOperator
             ));
@@ -316,6 +332,8 @@ class ExpAnalyzer extends AbstractAnalyzer
      */
     protected function checkValueTypeProcess(Expression $exp)
     {
+        static $functionScopeDepth = 0;
+
         $nextChar = $exp->detect(1);
 
         switch (true) {
@@ -324,14 +342,45 @@ class ExpAnalyzer extends AbstractAnalyzer
                 return self::STATE_NUMERIC_VALUE_START;
             case $nextChar === '"':
                 return self::STATE_QUOTED_VALUE_START;
+            /**
+             * 函数命名规则要求第一个字符必须是字母，不区分大小写
+             * 如果是函数，则跳转到函数的 value type process
+             */
+            case preg_match('/[a-z]/i', $nextChar):
+
+                ++$functionScopeDepth;
+                // 记录下一个字符是一个函数的起始位置
+                $this->markFunctionStart($exp->key());
+
+                return self::STATE_FUNC_VALUE_START;
+            case $nextChar === ')' && $functionScopeDepth > 0:
+
+                // 记录下一个字符是一个函数的结束位置
+                $this->markFunctionEnd($exp->key());
+
+                if (--$functionScopeDepth > 0) {
+                    return self::STATE_CHECK_IS_MULTIPLE_FUNC;
+                }
+
+                return self::STATE_CHECK_IS_MULTIPLE_VALUE;
             case checkIsBlank($nextChar):
                 return self::STATE_CHECK_VALUE_TYPE;
             default:
-                throw new Analyze\SearchParserAnalyzeInvalidValueException(sprintf(
+                throw new Analyze\AnalyzeInvalidValueException(sprintf(
                     "Invalid value start with %s.",
                     $nextChar
                 ));
         }
+    }
+
+    private function markFunctionStart($offset)
+    {
+        $this->functionMarks[$offset] = self::FUNC_START_MARK;
+    }
+
+    private function markFunctionEnd($offset)
+    {
+        $this->functionMarks[$offset] = self::FUNC_END_MARK;
     }
 
     /**
@@ -348,7 +397,7 @@ class ExpAnalyzer extends AbstractAnalyzer
             $operatorStack = [];
 
             if (!checkIsBlank($exp->detect(1))) {
-                throw new Analyze\SearchParserAnalyzeInvalidValueException(
+                throw new Analyze\AnalyzeInvalidValueException(
                     "Invalid operator with non-blank followed."
                 );
             }
@@ -388,6 +437,8 @@ class ExpAnalyzer extends AbstractAnalyzer
             case $nextChar === ',':
                 $state = self::STATE_CHECK_VALUE_TYPE;
                 break;
+            case $nextChar === ')':
+                return $this->checkValueTypeProcess($exp);
             /**
              * 空格是结束 value 的标志
              * 接下来可能会遇到 relation 或者另外一个 value
@@ -411,7 +462,7 @@ class ExpAnalyzer extends AbstractAnalyzer
              */
             default:
                 $isFloat = false;
-                throw new Analyze\SearchParserAnalyzeInvalidValueException(
+                throw new Analyze\AnalyzeInvalidValueException(
                     "Invalid numeric value."
                 );
         }
@@ -438,6 +489,7 @@ class ExpAnalyzer extends AbstractAnalyzer
             $quoted = !is_null($quoted);
         }
 
+        // $quoted 为真值意味着字符串已经结束，字符串被双引号套住了
         if ($quoted) {
             $quoted = null;
             $nextChar = $exp->detect(1);
@@ -455,6 +507,8 @@ class ExpAnalyzer extends AbstractAnalyzer
                  */
                 case $nextChar === ',':
                     return self::STATE_CHECK_VALUE_TYPE;
+                case $nextChar === ')':
+                    return $this->checkValueTypeProcess($exp);
                 /**
                  * quoted value 结束后紧跟一个空格
                  * 接下来可能会遇到 relation 或者另外一个 value
@@ -465,13 +519,61 @@ class ExpAnalyzer extends AbstractAnalyzer
                  * 以上条件都不满足则抛出异常
                  */
                 default:
-                    throw new Analyze\SearchParserAnalyzeInvalidValueException(
+                    throw new Analyze\AnalyzeInvalidValueException(
                         "Invalid quoted value."
                     );
             }
         }
 
         return self::STATE_QUOTED_VALUE_START;
+    }
+
+    protected function funcValueStartProcess(Expression $exp)
+    {
+        static $funcNameStack = [];
+
+        if ($exp->current() === '(') {
+            $funcNameStack = [];
+
+            return $this->checkValueTypeProcess($exp);
+        } else {
+            $funcNameStack[] = $exp->current();
+            $funcName = trim(implode('', $funcNameStack));
+
+            if (!preg_match(self::RULE_FUNCTION_NAME, $funcName)) {
+                throw new Analyze\AnalyzeInvalidFunctionNameException(sprintf(
+                    "Invalid function name %s.",
+                    $funcName
+                ));
+            }
+        }
+
+        return self::STATE_FUNC_VALUE_START;
+    }
+
+    protected function checkIsMultipleFuncProcess(Expression $exp)
+    {
+        $nextChar = $exp->detect(1);
+
+        switch (true) {
+            /**
+             * 遇到逗号，说明函数的参数多余 1 个
+             */
+            case $nextChar === ',':
+                return self::STATE_CHECK_VALUE_TYPE;
+            /**
+             * 下一个字符是空格仍旧维持现有状态
+             */
+            case checkIsBlank($nextChar):
+                return self::STATE_CHECK_IS_MULTIPLE_FUNC;
+            /**
+             * 以上条件都不满足则尝试检查 value 类型
+             */
+            case $nextChar === ')':
+                return $this->checkValueTypeProcess($exp);
+            default:
+                return self::STATE_CHECK_VALUE_TYPE;
+        }
     }
 
     protected function checkIsMultipleValueProcess(Expression $exp)
@@ -528,7 +630,7 @@ class ExpAnalyzer extends AbstractAnalyzer
              * 无法匹配任何 relation 则抛错
              */
             default:
-                throw new Analyze\SearchParserAnalyzeInvalidRelationException(sprintf(
+                throw new Analyze\AnalyzeInvalidRelationException(sprintf(
                     "Invalid relation start with %s.",
                     $nextChar = $exp->detect(1)
                 ));
@@ -572,7 +674,7 @@ class ExpAnalyzer extends AbstractAnalyzer
             $relationStack = [];
 
             if (!checkIsBlank($exp->detect(1))) {
-                throw new Analyze\SearchParserAnalyzeInvalidRelationException(
+                throw new Analyze\AnalyzeInvalidRelationException(
                     "Invalid relation with non-blank followed."
                 );
             }

@@ -4,13 +4,13 @@
  * 获取 Search Parser 的配置
  */
 if (!function_exists('getConfig')) {
-    function getConfig($key, $prefix = 'search_parser')
+    function getConfig($key, $default = null, $prefix = 'search_parser')
     {
         $keys = array_filter([$prefix, $key], function ($str) {
             return is_string($str) && !checkIsBlank($str);
         });
 
-        return config(implode('.', $keys), $key);
+        return config(implode('.', $keys), is_null($default) ? $key : $default);
     }
 }
 

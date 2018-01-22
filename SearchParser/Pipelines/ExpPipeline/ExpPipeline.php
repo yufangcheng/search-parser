@@ -2,14 +2,14 @@
 
 namespace SearchParser\Pipelines\ExpPipeline;
 
-use Avris\Bag\Set;
-use Inno\Lib\SearchParser\SearchParser;
-use Inno\Lib\SearchParser\Pipelines\AbstractPipeline;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\ExpAnalyzers;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Resolvers;
 use Avris\Bag\Bag;
+use Avris\Bag\Set;
 use Closure;
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Exceptions;
+use SearchParser\Pipelines\AbstractPipeline;
+use SearchParser\Pipelines\ExpPipeline\ExpAnalyzers;
+use SearchParser\Pipelines\ExpPipeline\Resolvers;
+use SearchParser\SearchParser;
 
 class ExpPipeline extends AbstractPipeline
 {
@@ -20,7 +20,8 @@ class ExpPipeline extends AbstractPipeline
 
     protected $analyzers = [
         ExpAnalyzers\ConvertToSimpleExpAnalyzer::class,
-        ExpAnalyzers\ExpAnalyzer::class
+        ExpAnalyzers\ExpAnalyzer::class,
+        ExpAnalyzers\ExecuteFunctionsAnalyzer::class
     ];
 
     protected $resolvers = [
@@ -80,13 +81,13 @@ class ExpPipeline extends AbstractPipeline
             $this->afterAnalyzersProcessed($payload)
         );
 
-        return $analyzer($exp, $ast = new Set());
+        return $analyzer($exp, $ast = new Bag());
     }
 
     protected function analyzersFrame()
     {
         return function ($prevCarry, $analyzer) {
-            return function (Expression $exp, Set $ast) use ($prevCarry, $analyzer) {
+            return function (Expression $exp, Bag $ast) use ($prevCarry, $analyzer) {
                 if ($analyzer instanceof Closure) {
                     return $analyzer($exp, $ast, $prevCarry);
                 }
@@ -99,7 +100,7 @@ class ExpPipeline extends AbstractPipeline
                     return $analyzer->analyze($exp, $ast, $prevCarry);
                 }
 
-                throw new Exceptions\SearchParserInvalidAnalyzerException(
+                throw new Exceptions\InvalidAnalyzerException(
                     'Failed to invoke the analyzer with a invalid name or object.'
                 );
             };
@@ -137,7 +138,7 @@ class ExpPipeline extends AbstractPipeline
              */
         }
 
-        throw new Exceptions\SearchParserInvalidResolverException(sprintf(
+        throw new Exceptions\InvalidResolverException(sprintf(
             "There's no available resolvers for expression %s.",
             $exp
         ));

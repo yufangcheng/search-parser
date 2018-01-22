@@ -4,7 +4,7 @@ namespace Tests\SearchParser;
 
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
-use Inno\Lib\SearchParser\SearchParser;
+use SearchParser\SearchParser;
 use Avris\Bag\Bag;
 use Closure;
 

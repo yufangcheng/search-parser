@@ -3,7 +3,7 @@
 namespace SearchParser\Pipelines\ExpPipeline\Middlewares;
 
 use Illuminate\Database\Eloquent\Builder;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
+use SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
 use Closure;
 
 abstract class AbstractMiddleware

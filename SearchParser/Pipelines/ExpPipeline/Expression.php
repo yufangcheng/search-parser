@@ -2,7 +2,7 @@
 
 namespace SearchParser\Pipelines\ExpPipeline;
 
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Exceptions;
 
 class Expression implements \Iterator
 {
@@ -10,14 +10,22 @@ class Expression implements \Iterator
 
     protected $position;
 
+    /**
+     * Expression constructor.
+     * @param Expression|string $exp
+     */
     public function __construct($exp)
     {
+        if ($exp instanceof Expression) {
+            $exp = $exp->getString();
+        }
+
         if (is_scalar($exp) || is_null($exp)) {
             $exp = (string)$exp;
         }
 
         if (!is_string($exp)) {
-            throw new Exceptions\SearchParserInitializeExpressionFailedException(sprintf(
+            throw new Exceptions\InitializeExpressionFailedException(sprintf(
                 "Failed to initialize expression with non-string.",
                 __CLASS__
             ));

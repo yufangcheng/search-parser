@@ -2,11 +2,11 @@
 
 namespace Tests\SearchParser\Analyzers;
 
-use Inno\Lib\Tests\SearchParser\AbstractTestCase;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Expression;
-use Avris\Bag\Set;
+use Avris\Bag\Bag;
 use Closure;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\ExpAnalyzers\ExpAnalyzer;
+use SearchParser\Pipelines\ExpPipeline\ExpAnalyzers\ExpAnalyzer;
+use SearchParser\Pipelines\ExpPipeline\Expression;
+use Tests\SearchParser\AbstractTestCase;
 
 class AnalyzeResultsTest extends AbstractTestCase
 {
@@ -158,6 +158,80 @@ class AnalyzeResultsTest extends AbstractTestCase
                     'dynamic_fields:{1'
                 ]
             ],
+            [
+                'id<=date2()',
+                [
+                    'id<=date2()'
+                ]
+            ],
+            [
+                'id<=date2(1)',
+                [
+                    'id<=date2(1)'
+                ]
+            ],
+            [
+                'id<=date2(1,2)',
+                [
+                    'id<=date2(1,2)'
+                ]
+            ],
+            [
+                'id<=date2("ABC")',
+                [
+                    'id<=date2("ABC")'
+                ]
+            ],
+            [
+                'id<=date2("ABC","DEF")',
+                [
+                    'id<=date2("ABC","DEF")'
+                ]
+            ],
+            [
+                'id<=date2(date3())',
+                [
+                    'id<=date2(date3())'
+                ]
+            ],
+            [
+                'id<=date2(date3(1))',
+                [
+                    'id<=date2(date3(1))'
+                ]
+            ],
+            [
+                'id<=date2(date3(),date4())',
+                [
+                    'id<=date2(date3(),date4())'
+                ]
+            ],
+            [
+                'id<=date2(date3(1),date4("A"))',
+                [
+                    'id<=date2(date3(1),date4("A"))'
+                ]
+            ],
+            [
+                'id<=date2(date3(1,2,3),date4(1,2,"A"))',
+                [
+                    'id<=date2(date3(1,2,3),date4(1,2,"A"))'
+                ]
+            ],
+            [
+                'id<=date2(1,"A",date3(1,2,3),date4(1,2,"A"))',
+                [
+                    'id<=date2(1,"A",date3(1,2,3),date4(1,2,"A"))'
+                ]
+            ],
+            [
+                'id<=date2(1,"A",date3(1,2,3),date4(1,2,"A")) OR (name:"zhangsan" OR age:20) OR id:3',
+                [
+                    'id<=date2(1,"A",date3(1,2,3),date4(1,2,"A"))',
+                    'OR (name:"zhangsan" OR age:20)',
+                    'OR id:3'
+                ]
+            ],
         ];
     }
 
@@ -169,9 +243,9 @@ class AnalyzeResultsTest extends AbstractTestCase
     public function testAnalyzeResults($exp, $exceptedResult)
     {
         $exp = new Expression($exp);
-        $ast = new Set();
-        $callback = Closure::bind(function (Expression $exp, Set $ast) use ($exceptedResult) {
-            $this->assertEquals($exceptedResult, $ast->all());
+        $ast = new Bag();
+        $callback = Closure::bind(function (Expression $exp, Bag $ast) use ($exceptedResult) {
+            $this->assertEquals($exceptedResult, $ast->keys());
         }, $this, $this);
         $analyzer = new ExpAnalyzer;
         $analyzer->analyze($exp, $ast, $callback);

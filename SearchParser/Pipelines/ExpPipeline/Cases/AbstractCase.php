@@ -2,14 +2,14 @@
 
 namespace SearchParser\Pipelines\ExpPipeline\Cases;
 
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Middlewares;
+use SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
+use SearchParser\Pipelines\ExpPipeline\Middlewares;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Avris\Bag\Bag;
 use Avris\Bag\Set;
 use Closure;
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Exceptions;
 
 abstract class AbstractCase implements CaseInterface
 {
@@ -57,7 +57,7 @@ abstract class AbstractCase implements CaseInterface
 
         return array_merge(
             $preMiddlewares,
-            getConfig('middlewares'),
+            getConfig('middlewares.advancedSearch'),
             $postMiddlewares
         );
     }
@@ -131,7 +131,7 @@ abstract class AbstractCase implements CaseInterface
      */
     public function getSupportedValueTypes()
     {
-        throw new Exceptions\SearchParserInvalidValueTypeException(sprintf(
+        throw new Exceptions\InvalidValueTypeException(sprintf(
             "The case %s doesn't support any value types.",
             __CLASS__
         ));

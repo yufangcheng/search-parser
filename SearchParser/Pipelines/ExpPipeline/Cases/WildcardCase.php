@@ -2,7 +2,7 @@
 
 namespace SearchParser\Pipelines\ExpPipeline\Cases;
 
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Middlewares;
+use SearchParser\Pipelines\ExpPipeline\Middlewares;
 
 class WildcardCase extends AbstractCase
 {

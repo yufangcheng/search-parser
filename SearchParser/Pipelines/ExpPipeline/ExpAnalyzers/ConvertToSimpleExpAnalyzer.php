@@ -2,22 +2,23 @@
 
 namespace SearchParser\Pipelines\ExpPipeline\ExpAnalyzers;
 
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Expression;
-use Avris\Bag\Set;
+use Avris\Bag\Bag;
 use Closure;
-use Inno\Lib\SearchParser\Exceptions\Analyze;
+use SearchParser\Exceptions\Analyze;
+use SearchParser\Pipelines\ExpPipeline\Expression;
 
 class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
 {
-    const RULE_EXP_CLOSED_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\[\s*(\*|\-?\d+|".+?")\s+TO\s+(\*|\-?\d+|".+?")\s*\]/i';
-    const RULE_EXP_LEFT_CLOSED_RIGHT_OPEN_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\[\s*(\*|\-?\d+|".+?")\s+TO\s+(\-?\d+|".+?")\s*\}/i';
-    const RULE_EXP_OPEN_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\{\s*(\-?\d+|".+?")\s+TO\s+(\-?\d+|".+?")\s*\}/i';
-    const RULE_EXP_LEFT_OPEN_RIGHT_CLOSED_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\{\s*(\-?\d+|".+?")\s+TO\s+(\*|\-?\d+|".+?")\s*\]/i';
-    const RULE_EXP_SET = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?<(\s*(?:\-?\d+|".+?")\s*(?:,\s*(?:\-?\d+|".+?")\s*)*)>/i';
-    const RULE_EXP_CONTAIN = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\|(\s*(?:\-?\d+|".+?")\s*(?:,\s*(?:\-?\d+|".+?")\s*)*)\|/i';
-    const RULE_EXP_LIKE = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*~\s*(?:(NOT)\s+)?(\-?\d+|".+?")/i';
+    const RULE_PARAM = '/\s*(?<params>\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*/';
+    const RULE_EXP_CLOSED_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\[\s*(\*|\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s+TO\s+(\*|\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*\]/i';
+    const RULE_EXP_LEFT_CLOSED_RIGHT_OPEN_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\[\s*(\*|\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s+TO\s+(\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*\}/i';
+    const RULE_EXP_OPEN_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\{\s*(\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s+TO\s+(\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*\}/i';
+    const RULE_EXP_LEFT_OPEN_RIGHT_CLOSED_INTERVAL = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\{\s*(\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s+TO\s+(\*|\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*\]/i';
+    const RULE_EXP_SET = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?<(\s*(?:\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*(?:,\s*(?:\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*)*)>/i';
+    const RULE_EXP_CONTAIN = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*:\s*(?:(NOT)\s+)?\|(\s*(?:\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*(?:,\s*(?:\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))\s*)*)\|/i';
+    const RULE_EXP_LIKE = '/(?:(OR|AND)\s+)?(?:(\w+)\.)?(\w+)\s*~\s*(?:(NOT)\s+)?(\-?\d+|".*?"|[a-z]\w*\(\s*(?:(?:\-?\d+|".*?")\s*(?:,\s*(?:\-?\d+|".*?"))*)?\s*\))/i';
 
-    public function analyze(Expression $exp, Set $ast, Closure $next)
+    public function analyze(Expression $exp, Bag $ast, Closure $next)
     {
         $expString = $exp->getString();
         $rules = $this->getExpRules();
@@ -51,7 +52,7 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
         $rules = $this->getExpRules();
 
         if (!isset($rules[$ruleName])) {
-            throw new Analyze\SearchParserAnalyzeMissingStateException(sprintf(
+            throw new Analyze\AnalyzeMissingStateException(sprintf(
                 "Missing rule which name is %s.",
                 $ruleName
             ));
@@ -83,7 +84,7 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
     protected function invokeProcess($process, $exp, $expData)
     {
         if (!method_exists($this, $process)) {
-            throw new Analyze\SearchParserAnalyzeMissingProcessException(sprintf(
+            throw new Analyze\AnalyzeMissingProcessException(sprintf(
                 "Process %s is missing in analyzer %s.",
                 $process,
                 __CLASS__
@@ -105,13 +106,13 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
             $replace = '';
         } else if ($from === '*') {
             $template = strtoupper($negation) === 'NOT' ? '%s %s>%s' : '%s %s<=%s';
-            $replace = sprintf($template, $relation, $fullField, $to);
+            $replace = trim(sprintf($template, $relation, $fullField, $to));
         } else if ($to === '*') {
             $template = strtoupper($negation) === 'NOT' ? '%s %s<%s' : '%s %s>=%s';
-            $replace = sprintf($template, $relation, $fullField, $from);
+            $replace = trim(sprintf($template, $relation, $fullField, $from));
         } else {
             $template = strtoupper($negation) === 'NOT' ? '%s (%s<%s OR %s>%s)' : '%s %s>=%s AND %s<=%s';
-            $replace = sprintf($template, $relation, $fullField, $from, $fullField, $to);
+            $replace = trim(sprintf($template, $relation, $fullField, $from, $fullField, $to));
         }
 
         $exp = trim(str_replace($case, $replace, $exp));
@@ -129,10 +130,10 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
 
         if ($from === '*') {
             $template = strtoupper($negation) === 'NOT' ? '%s %s>=%s' : '%s %s<%s';
-            $replace = sprintf($template, $relation, $fullField, $to);
+            $replace = trim(sprintf($template, $relation, $fullField, $to));
         } else {
             $template = strtoupper($negation) === 'NOT' ? '%s (%s<%s OR %s>=%s)' : '%s %s>=%s AND %s<%s';
-            $replace = sprintf($template, $relation, $fullField, $from, $fullField, $to);
+            $replace = trim(sprintf($template, $relation, $fullField, $from, $fullField, $to));
         }
 
         $exp = trim(str_replace($case, $replace, $exp));
@@ -154,7 +155,7 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
             $template = '%s %s>%s AND %s<%s';
         }
 
-        $replace = sprintf($template, $relation, $fullField, $from, $fullField, $to);
+        $replace = trim(sprintf($template, $relation, $fullField, $from, $fullField, $to));
         $exp = trim(str_replace($case, $replace, $exp));
 
         return $exp;
@@ -170,10 +171,10 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
 
         if ($to === '*') {
             $template = strtoupper($negation) === 'NOT' ? '%s %s<=%s' : '%s %s>%s';
-            $replace = sprintf($template, $relation, $fullField, $from);
+            $replace = trim(sprintf($template, $relation, $fullField, $from));
         } else {
             $template = strtoupper($negation) === 'NOT' ? '%s (%s<=%s OR %s>%s)' : '%s %s>%s AND %s<=%s';
-            $replace = sprintf($template, $relation, $fullField, $from, $fullField, $to);
+            $replace = trim(sprintf($template, $relation, $fullField, $from, $fullField, $to));
         }
 
         $exp = trim(str_replace($case, $replace, $exp));
@@ -189,9 +190,13 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
 
         // 清除每个值的多余空格
 
-        $values = array_map(function ($value) {
-            return trim($value);
-        }, explode(',', $values));
+        $params = [];
+
+        if (preg_match_all(self::RULE_PARAM, $values, $params)) {
+            $values = array_map(function ($value) {
+                return trim($value);
+            }, array_get($params, 'params', []));
+        }
 
         if (count($values) === 1) {
             $template = '%s %s:%s';
@@ -199,7 +204,9 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
             $template = '%s %s:|%s';
         }
 
-        $replace = sprintf($template, $relation, $fullField, trim($negation . ' ' . implode(',', $values)));
+        $replace = trim(sprintf(
+            $template, $relation, $fullField, trim($negation . ' ' . implode(',', $values))
+        ));
         $exp = trim(str_replace($case, $replace, $exp));
 
         return $exp;
@@ -213,12 +220,18 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
 
         // 清除每个值的多余空格
 
-        $values = array_map(function ($value) {
-            return trim($value);
-        }, explode(',', $values));
+        $params = [];
+
+        if (preg_match_all(self::RULE_PARAM, $values, $params)) {
+            $values = array_map(function ($value) {
+                return trim($value);
+            }, array_get($params, 'params', []));
+        }
 
         $template = '%s %s:{%s';
-        $replace = sprintf($template, $relation, $fullField, trim($negation . ' ' . implode(',', $values)));
+        $replace = trim(sprintf(
+            $template, $relation, $fullField, trim($negation . ' ' . implode(',', $values))
+        ));
         $exp = trim(str_replace($case, $replace, $exp));
 
         return $exp;
@@ -230,7 +243,9 @@ class ConvertToSimpleExpAnalyzer extends AbstractAnalyzer
 
         $fullField = $this->getFullFieldName($fieldRelation, $field);
         $template = '%s %s:%s';
-        $replace = sprintf($template, $relation, $fullField, trim($negation . ' ' . $value));
+        $replace = trim(sprintf(
+            $template, $relation, $fullField, trim($negation . ' ' . $value)
+        ));
         $exp = trim(str_replace($case, $replace, $exp));
 
         return $exp;

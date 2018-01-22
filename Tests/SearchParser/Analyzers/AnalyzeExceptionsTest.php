@@ -2,16 +2,16 @@
 
 namespace Tests\SearchParser\Analyzers;
 
-use Inno\Lib\Tests\SearchParser\AbstractTestCase;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Expression;
+use Tests\SearchParser\AbstractTestCase;
+use SearchParser\Pipelines\ExpPipeline\Expression;
 use Avris\Bag\Set;
 use Closure;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\ExpAnalyzers\ExpAnalyzer;
+use SearchParser\Pipelines\ExpPipeline\ExpAnalyzers\ExpAnalyzer;
 
 class AnalyzeExceptionsTest extends AbstractTestCase
 {
     /**
-     * @expectedException \Inno\Lib\SearchParser\Exceptions\Analyze\SearchParserAnalyzeMissingStateException
+     * @expectedException \SearchParser\Exceptions\Analyze\AnalyzeMissingStateException
      */
     public function testSearchParserAnalyzeMissingStateException()
     {
@@ -25,7 +25,7 @@ class AnalyzeExceptionsTest extends AbstractTestCase
     }
 
     /**
-     * @expectedException \Inno\Lib\SearchParser\Exceptions\Analyze\SearchParserAnalyzeMissingProcessException
+     * @expectedException \SearchParser\Exceptions\Analyze\AnalyzeMissingProcessException
      */
     public function testSearchParserAnalyzeMissingProcessException()
     {
@@ -48,7 +48,7 @@ class AnalyzeExceptionsTest extends AbstractTestCase
 
     /**
      * @dataProvider invalidKeyExpProvider
-     * @expectedException \Inno\Lib\SearchParser\Exceptions\Analyze\SearchParserAnalyzeInvalidKeyException
+     * @expectedException \SearchParser\Exceptions\Analyze\AnalyzeInvalidKeyException
      * @param $invalidKeyExp
      */
     public function testSearchParserAnalyzeInvalidKeyException($invalidKeyExp)
@@ -75,7 +75,7 @@ class AnalyzeExceptionsTest extends AbstractTestCase
 
     /**
      * @dataProvider invalidValueExpProvider
-     * @expectedException \Inno\Lib\SearchParser\Exceptions\Analyze\SearchParserAnalyzeInvalidValueException
+     * @expectedException \SearchParser\Exceptions\Analyze\AnalyzeInvalidValueException
      * @param $invalidValueExp
      */
     public function testSearchParserAnalyzeInvalidValueException($invalidValueExp)
@@ -99,7 +99,7 @@ class AnalyzeExceptionsTest extends AbstractTestCase
 
     /**
      * @dataProvider invalidRelationExpProvider
-     * @expectedException \Inno\Lib\SearchParser\Exceptions\Analyze\SearchParserAnalyzeInvalidRelationException
+     * @expectedException \SearchParser\Exceptions\Analyze\AnalyzeInvalidRelationException
      * @param $invalidRelationExp
      */
     public function testSearchParserAnalyzeInvalidRelationException($invalidRelationExp)

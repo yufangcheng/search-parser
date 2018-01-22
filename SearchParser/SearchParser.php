@@ -7,9 +7,9 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Inno\Lib\SearchParser\Pipelines;
-use Inno\Lib\SearchParser\Pipelines\AbstractPipeline;
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Pipelines;
+use SearchParser\Pipelines\AbstractPipeline;
+use SearchParser\Exceptions;
 
 class SearchParser
 {
@@ -25,7 +25,7 @@ class SearchParser
 
     protected $pipelines = [
         Pipelines\FilterPipeline::class,
-        Pipelines\OrderPipeline::class,
+        Pipelines\OrderPipeline\OrderPipeline::class,
         Pipelines\ExpPipeline\ExpPipeline::class,
         Pipelines\PaginationPipeline::class,
         Pipelines\WithPipeline::class
@@ -74,7 +74,7 @@ class SearchParser
                     return $pipeline->handle($parser, $payload, $prevCarry);
                 }
 
-                throw new Exceptions\SearchParserInvalidPipelineException(sprintf(
+                throw new Exceptions\InvalidPipelineException(sprintf(
                     'Failed to invoke the pipeline with an invalid name or object.'
                 ));
             };

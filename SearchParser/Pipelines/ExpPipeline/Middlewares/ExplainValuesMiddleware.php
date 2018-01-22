@@ -3,10 +3,10 @@
 namespace SearchParser\Pipelines\ExpPipeline\Middlewares;
 
 use Illuminate\Database\Eloquent\Builder;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
+use SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
 use Closure;
-use Inno\Lib\SearchParser\Exceptions;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\ValueTypes;
+use SearchParser\Exceptions;
+use SearchParser\Pipelines\ExpPipeline\Cases\ValueTypes;
 
 class ExplainValuesMiddleware extends AbstractMiddleware
 {
@@ -73,9 +73,10 @@ class ExplainValuesMiddleware extends AbstractMiddleware
              */
         }
 
-        throw new Exceptions\SearchParserInvalidValueTypeException(sprintf(
-            "There's no available value type for value %s.",
-            $value
+        throw new Exceptions\InvalidValueTypeException(sprintf(
+            "The value %s is not suitable for the field %s.",
+            $value,
+            $case->field
         ));
     }
 }

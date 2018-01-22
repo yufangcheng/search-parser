@@ -2,7 +2,7 @@
 
 namespace SearchParser\Pipelines;
 
-use Inno\Lib\SearchParser\SearchParser;
+use SearchParser\SearchParser;
 use Avris\Bag\Bag;
 use Avris\Bag\Set;
 use Closure;

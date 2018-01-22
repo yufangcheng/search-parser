@@ -3,12 +3,12 @@
 namespace SearchParser\Pipelines\ExpPipeline\Resolvers;
 
 use Illuminate\Database\Eloquent\Builder;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Expression;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
-use Inno\Lib\SearchParser\Pipelines\ExpPipeline\Middlewares\AbstractMiddleware;
+use SearchParser\Pipelines\ExpPipeline\Expression;
+use SearchParser\Pipelines\ExpPipeline\Cases\Contracts\CaseInterface;
+use SearchParser\Pipelines\ExpPipeline\Middlewares\AbstractMiddleware;
 use Closure;
 use Avris\Bag\Bag;
-use Inno\Lib\SearchParser\Exceptions;
+use SearchParser\Exceptions;
 
 abstract class AbstractResolver
 {
@@ -129,7 +129,7 @@ abstract class AbstractResolver
         return function (Builder $builder) use ($caseInstances) {
             foreach ($caseInstances as $caseInstance) {
                 if (!($caseInstance instanceof CaseInterface)) {
-                    throw new Exceptions\SearchParserInvalidCaseException(sprintf(
+                    throw new Exceptions\InvalidCaseException(sprintf(
                         'Invalid case instance of %s resolver.',
                         __CLASS__
                     ));
@@ -169,7 +169,7 @@ abstract class AbstractResolver
                     return $middleware->handle($builder, $caseInstance, $prevCarry);
                 }
 
-                throw new Exceptions\SearchParserInvalidMiddlewareException(sprintf(
+                throw new Exceptions\InvalidMiddlewareException(sprintf(
                     'Invalid middleware %s.',
                     $middleware
                 ));
@@ -194,8 +194,8 @@ abstract class AbstractResolver
     /**
      * 分析查询表达式
      *
-     * @throws Exceptions\SearchParserInvalidResolverException
-     * @throws Exceptions\SearchParserResolveFailedException
+     * @throws Exceptions\InvalidResolverException
+     * @throws Exceptions\ResolveFailedException
      */
     public function resolve()
     {
@@ -216,7 +216,7 @@ abstract class AbstractResolver
         $exp = $this->exp->getString();
 
         if (!preg_match(static::$resolverReg, $exp, $matches)) {
-            throw new Exceptions\SearchParserResolveFailedException(sprintf(
+            throw new Exceptions\ResolveFailedException(sprintf(
                 'Failed to initialize a case for %s resolver with invalid case string %s.',
                 __CLASS__,
                 $exp
@@ -243,7 +243,7 @@ abstract class AbstractResolver
      *
      * @param array $resolvedData
      * @return mixed
-     * @throws Exceptions\SearchParserInitializeCaseFailed
+     * @throws Exceptions\InitializeCaseFailed
      */
     protected function getCaseInstance($resolvedData)
     {
@@ -274,7 +274,7 @@ abstract class AbstractResolver
      *
      * @param array $caseClasses
      * @param array $resolvedData
-     * @throws Exceptions\SearchParserInitializeCaseFailed
+     * @throws Exceptions\InitializeCaseFailed
      * @return array
      */
     protected function initializeMultipleCases($caseClasses, $resolvedData)
@@ -283,7 +283,7 @@ abstract class AbstractResolver
         $nonValueParamsCount = count($resolvedData) - count($caseClasses);
 
         if ($nonValueParamsCount < 0) {
-            throw new Exceptions\SearchParserInitializeCaseFailed(sprintf(
+            throw new Exceptions\InitializeCaseFailed(sprintf(
                 "The number of cases that supported by the resolver %s exceeds the number of resolved parameters.",
                 __CLASS__
             ));
@@ -294,7 +294,7 @@ abstract class AbstractResolver
 
         foreach ($caseClasses as $caseClass) {
             if (is_null($caseValue = array_shift($valueParams))) {
-                throw new Exceptions\SearchParserInitializeCaseFailed(sprintf(
+                throw new Exceptions\InitializeCaseFailed(sprintf(
                     "Failed to initialize a case with empty value."
                 ));
             }
@@ -311,7 +311,7 @@ abstract class AbstractResolver
      *
      * @param string $caseClass
      * @param array $resolvedData
-     * @throws Exceptions\SearchParserInvalidCaseException
+     * @throws Exceptions\InvalidCaseException
      * @return object
      */
     protected function initializeCase($caseClass, $resolvedData)
@@ -321,21 +321,21 @@ abstract class AbstractResolver
         }
 
         if (!isset($reflector) || !$reflector->isInstantiable()) {
-            throw new Exceptions\SearchParserInvalidCaseException(sprintf(
+            throw new Exceptions\InvalidCaseException(sprintf(
                 "Could not create %s case instance because of %s isn't instantiable.",
                 $caseClass
             ));
         }
 
         if (is_null($constructor = $reflector->getConstructor())) {
-            throw new Exceptions\SearchParserInvalidCaseException(sprintf(
+            throw new Exceptions\InvalidCaseException(sprintf(
                 "Could not create %s case instance because of there's no constructor.",
                 $caseClass
             ));
         }
 
         if (count($resolvedData) < count($constructor->getParameters())) {
-            throw new Exceptions\SearchParserInvalidCaseException(sprintf(
+            throw new Exceptions\InvalidCaseException(sprintf(
                 "Could not create %s case instance because of missing initial parameters.",
                 $caseClass
             ));
