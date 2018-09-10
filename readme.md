@@ -1,43 +1,58 @@
-### 使用示例
+### Install
+```
+composer require yufangcheng/search-parser
+```
 
-<pre>
-<code>
-use SearchQuery\SearchQueryTrait;
- 
-class SdkClient {
-    
-    use SearchQueryTrait;
-     
-    public function get() {
-        $exp = $this->where('id', 1)->orWhere(function ($query) {
-            $query->where('name', 'zhangsan');
-            $query->orWhereNotIn('name', 1, 10);
-        })->orWhere(function($query) {
-            $query->whereNotInOpenInterval('age', 20,50);
-            $query->orWhere('age', 100);
-        })->buildQuery();
-        
-        echo $exp;
-    }
-}
-</code>
-</pre>
+Add the provider below to `config/app.app`
+```
+Inno\Lib\SearchParser\Providers\SearchParserServiceProvider::class
+```
 
-### 支持的方法
+Then run the command
+```
+php artisan vendor:publish
+```
 
-1. where
-2. whereNot
-3. orWhere
-4. orWhereNot
-5. whereInOpenInterval
-6. whereNotInOpenInterval
-7. orWhereInOpenInterval
-8. orWhereNotInOpenInterval
-9. whereInClosedInterval
-10. whereNotInClosedInterval
-11. orWhereInClosedInterval
-12. orWhereNotInClosedInterval
-13. whereIn
-14. whereNotIn
-15. orWhereIn
-16. orWhereNotIn
+### Example
+
+```
+http://example.com/api/users?q=id:1
+```
+
+```
+http://example.com/api/users?email~"*@gmail.com"
+```
+
+```
+http://example.com/api/users?id:<1,2,3>
+```
+
+```
+http://example.com/api/users?id:NOT <1,2,3>
+```
+
+```
+http://example.com/api/users?id:[1 TO 100]
+```
+
+```
+http://example.com/api/users?q=created_at:["-3 months" TO "now"] AND id:NOT [1 TO 100] OR (email:"*@vip.patsnap.com" OR id:888)&sort=id desc&fl=id,email&with=profile
+```
+
+### To avoid the cut off of a too long URL by browser or server
+
+Use the optianal header named `search` to transmit the query string.
+
+### Field name pattern
+
+| Pattern |
+| ------- |
+| /\^[a-zA-Z_][a-zA-Z0-9_]*$/i |
+
+### Function name pattern
+
+| Pattern |
+| ------- |
+| /\^[a-z]\w*$/i |
+
+## Incomplete...
