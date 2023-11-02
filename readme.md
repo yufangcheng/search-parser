@@ -1,4 +1,4 @@
-# Use JavaCC instead
+### Use JavaCC instead
 
 [click me](https://javacc.github.io/javacc/)
 
