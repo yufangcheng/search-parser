@@ -1,3 +1,7 @@
+# Use JavaCC instead
+
+[click me](https://javacc.github.io/javacc/)
+
 ### Install
 ```
 composer require yufangcheng/search-parser
